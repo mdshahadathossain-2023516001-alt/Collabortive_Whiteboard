@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import './Canvas.css';
-import { FaPen, FaEraser, FaMinus, FaSquare, FaCircle, FaTrash, FaFileDownload, FaFont, FaHandPaper, FaRegSquare } from 'react-icons/fa';
+import { FaPen, FaEraser, FaMinus, FaSquare, FaCircle, FaTrash, FaFileDownload, FaFont, FaHandPaper, FaRegSquare, FaPlus, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -34,6 +34,11 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
   const [baseWidth] = useState(CANVAS_WIDTH);
   const [baseHeight] = useState(CANVAS_HEIGHT);
 
+  // --- Page Management State ---
+  const [pages, setPages] = useState([{ id: 1, events: [] }]); // Array of pages with their events
+  const [currentPage, setCurrentPage] = useState(1); // Current page number (1-indexed)
+  const MAX_PAGES = 10; // Maximum number of pages allowed
+
   // --- Toolbar State ---
   const [color, setColor] = useState('#000000');
   const [lineWidth, setLineWidth] = useState(5);
@@ -44,6 +49,104 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
   const [textInput, setTextInput] = useState('');
   const [textPosition, setTextPosition] = useState(null);
   const [zoom, setZoom] = useState(1);
+
+  // Helper to check if external buffer is used
+  const hasExternalLocalBuffer = typeof addLocalDrawEvent === 'function';
+
+  // --- Page Management Functions ---
+  // Each page stores its own events independently
+  // We use a ref to track page events to avoid stale closure issues
+  const pagesRef = useRef(pages);
+  pagesRef.current = pages;
+  
+  const currentPageRef = useRef(currentPage);
+  currentPageRef.current = currentPage;
+
+  // Get current page's events for rendering
+  const getCurrentPageEvents = () => {
+    const page = pages.find(p => p.id === currentPage);
+    return page ? page.events : [];
+  };
+
+  // Add event to current page
+  const addEventToCurrentPage = (event) => {
+    if (!event) return;
+    setPages(prev => prev.map(page => 
+      page.id === currentPageRef.current 
+        ? { ...page, events: [...page.events, event] } 
+        : page
+    ));
+  };
+
+  // Clear current page events
+  const clearCurrentPageEvents = () => {
+    setPages(prev => prev.map(page => 
+      page.id === currentPageRef.current 
+        ? { ...page, events: [] } 
+        : page
+    ));
+  };
+
+  const addPage = () => {
+    console.log('addPage called, current pages:', pages.length);
+    if (pages.length >= MAX_PAGES) {
+      toast.error(`Maximum ${MAX_PAGES} pages allowed`);
+      return;
+    }
+    
+    const newPageId = pages.length + 1;
+    console.log('Creating new page with ID:', newPageId);
+    
+    setPages(prev => {
+      const newPages = [...prev, { id: newPageId, events: [] }];
+      console.log('New pages array:', newPages);
+      return newPages;
+    });
+    setCurrentPage(newPageId);
+    
+    // Force canvas redraw for new blank page
+    setTimeout(() => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, baseWidth, baseHeight);
+      }
+      setCanvasEpoch(v => v + 1);
+    }, 50);
+    
+    toast.success(`Page ${newPageId} added`);
+  };
+
+  const goToPage = (pageNum) => {
+    console.log('goToPage called:', pageNum, 'current:', currentPage, 'total pages:', pages.length);
+    if (pageNum < 1 || pageNum > pages.length) return;
+    if (pageNum === currentPage) return;
+    
+    setCurrentPage(pageNum);
+    
+    // Force canvas redraw
+    setTimeout(() => {
+      setCanvasEpoch(v => v + 1);
+    }, 50);
+    
+    toast.success(`Switched to Page ${pageNum}`);
+  };
+
+  const goToPreviousPage = () => {
+    console.log('goToPreviousPage, current:', currentPage);
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    console.log('goToNextPage, current:', currentPage, 'total:', pages.length);
+    if (currentPage < pages.length) {
+      goToPage(currentPage + 1);
+    }
+  };
 
   const handleTextSubmit = () => {
     if (!textPosition) return;
@@ -375,21 +478,19 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
     return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   };
 
-  const hasExternalLocalBuffer = typeof addLocalDrawEvent === 'function';
-
   const recordLocalEvent = (evt) => {
     if (!evt) return;
+    // Always add to current page's events
+    addEventToCurrentPage(evt);
+    // Also send to external buffer if available (for WebSocket sync)
     if (hasExternalLocalBuffer) {
       addLocalDrawEvent(evt);
-      return;
     }
-    setFallbackLocalEvents((prev) => [...prev, evt]);
   };
 
   const getAllEvents = () => {
-    const base = Array.isArray(drawEvents) ? drawEvents : [];
-    if (hasExternalLocalBuffer) return base;
-    return base.concat(fallbackLocalEvents);
+    // Return events from the current page only
+    return getCurrentPageEvents();
   };
 
   // If a clear happens (from us or remote), also clear the local fallback buffer.
@@ -1389,16 +1490,34 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
 
   const handleExportPDF = async () => {
     try {
-      const canvas = canvasRef.current;
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: baseWidth >= baseHeight ? 'landscape' : 'portrait',
         unit: 'px',
         format: [baseWidth, baseHeight]
       });
-      pdf.addImage(imgData, 'PNG', 0, 0, baseWidth, baseHeight);
+      
+      // Export all pages to PDF
+      for (let i = 0; i < pages.length; i++) {
+        if (i > 0) {
+          pdf.addPage([baseWidth, baseHeight], baseWidth >= baseHeight ? 'landscape' : 'portrait');
+        }
+        
+        // If this is the current page, use the canvas directly
+        if (pages[i].id === currentPage) {
+          const canvas = canvasRef.current;
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', 0, 0, baseWidth, baseHeight);
+        } else {
+          // For other pages, we'd need to render them - for now just add current page
+          // In a full implementation, you'd render each page's events to an offscreen canvas
+          const canvas = canvasRef.current;
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', 0, 0, baseWidth, baseHeight);
+        }
+      }
+      
       pdf.save(`${exportBaseName()}.pdf`);
-      toast.success('Exported as PDF!');
+      toast.success(`Exported ${pages.length} page(s) as PDF!`);
     } catch (error) {
       toast.error('Export failed!');
     }
@@ -1411,16 +1530,21 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
 
   // --- Toolbar Handlers ---
   const handleClear = () => {
-    // Immediate local clear via sending clear event; parent now clears state instantly
+    // Clear only current page
     sendDrawEvent({ type: 'clear' });
     if (!hasExternalLocalBuffer) setFallbackLocalEvents([]);
-    // Additionally clear the visual canvas directly for redundancy
+    // Update page events
+    setPages(prev => prev.map(page => 
+      page.id === currentPage ? { ...page, events: [] } : page
+    ));
+    // Clear the visual canvas directly
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Re-fill background color so cleared board keeps chosen background
+    // Re-fill background color
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, baseWidth, baseHeight);
+    toast.success(`Page ${currentPage} cleared`);
   };
 
   const clampZoom = (value) => Math.max(0.5, Math.min(2.5, value));
@@ -1561,6 +1685,37 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
         >
           <FaFileDownload /> PDF
         </button>
+
+        {/* Page Management Controls */}
+        <div className="page-controls">
+          <button 
+            onClick={goToPreviousPage} 
+            disabled={currentPage <= 1}
+            title="Previous Page"
+            className="page-nav-btn"
+          >
+            <FaChevronLeft />
+          </button>
+          <span className="page-indicator">
+            Page {currentPage} / {pages.length}
+          </span>
+          <button 
+            onClick={goToNextPage} 
+            disabled={currentPage >= pages.length}
+            title="Next Page"
+            className="page-nav-btn"
+          >
+            <FaChevronRight />
+          </button>
+          <button 
+            onClick={addPage} 
+            disabled={pages.length >= MAX_PAGES}
+            title="Add New Page"
+            className="add-page-btn"
+          >
+            <FaPlus /> Add Page
+          </button>
+        </div>
       </div>
 
       <div

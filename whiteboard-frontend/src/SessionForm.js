@@ -42,7 +42,12 @@ function SessionForm({ onLogin }) {
         onLogin({ sessionName: sessionName.trim(), userName: userName.trim() });
       } else {
         const errorText = await response.text();
-        setError(errorText || `Failed to ${mode} session. Please try again.`);
+        try {
+          const errorJson = JSON.parse(errorText);
+          setError(errorJson.message || `Failed to ${mode} session. Please try again.`);
+        } catch {
+          setError(errorText || `Failed to ${mode} session. Please try again.`);
+        }
       }
     } catch (err) {
       console.error('Error:', err);

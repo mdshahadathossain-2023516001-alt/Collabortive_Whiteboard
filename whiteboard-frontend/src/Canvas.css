@@ -120,6 +120,61 @@
   background-color: #0066cc !important;
 }
 
+/* Page Controls */
+.page-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 2px solid #dee2e6;
+}
+
+.page-indicator {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #374151;
+  min-width: 80px;
+  text-align: center;
+}
+
+.page-nav-btn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+  color: #374151 !important;
+}
+
+.page-nav-btn:hover:not(:disabled) {
+  background-color: #e5e7eb !important;
+}
+
+.page-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.add-page-btn {
+  background-color: #8b5cf6 !important;
+  color: white !important;
+  border-color: #8b5cf6 !important;
+}
+
+.add-page-btn:hover:not(:disabled) {
+  background-color: #7c3aed !important;
+}
+
+.add-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .canvas-toolbar .tool-group button {
   min-width: 40px;
 }

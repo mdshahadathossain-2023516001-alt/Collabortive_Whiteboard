@@ -35,7 +35,12 @@ function LoginPage({ onLogin }) {
         onLogin({ sessionName, userName });
       } else {
         const errorText = await response.text();
-        setError(errorText || `Failed to ${isJoining ? 'join' : 'create'} session.`);
+        try {
+          const errorJson = JSON.parse(errorText);
+          setError(errorJson.message || `Failed to ${isJoining ? 'join' : 'create'} session.`);
+        } catch {
+          setError(errorText || `Failed to ${isJoining ? 'join' : 'create'} session.`);
+        }
       }
     } catch (err) {
       setError('An error occurred. Is the backend server running?');

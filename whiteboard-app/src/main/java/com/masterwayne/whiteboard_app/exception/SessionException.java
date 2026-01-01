@@ -13,11 +13,11 @@ public class SessionException extends WhiteboardException {
     }
 
     public static SessionException sessionNotFound(String sessionName) {
-        return new SessionException("Session '" + sessionName + "' does not exist.");
+        return new SessionException(sessionName + " session does not exist!");
     }
 
     public static SessionException sessionAlreadyExists(String sessionName) {
-        return new SessionException("Session '" + sessionName + "' already exists.");
+        return new SessionException(sessionName + " session already exists!");
     }
 
     public static SessionException userAlreadyInSession(String userName, String sessionName) {
