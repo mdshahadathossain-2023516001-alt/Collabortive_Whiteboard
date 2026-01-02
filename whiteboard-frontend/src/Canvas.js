@@ -677,9 +677,12 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
     if (!selectedRect) return;
     const payload = selectedText?.id
       ? { type: 'text-delete', targetId: selectedText.id, lineWidth: 1, x1: 0, y1: 0, x2: 0, y2: 0 }
-      : { type: 'erase-rect', x1: selectedRect.x1, y1: selectedRect.y1, x2: selectedRect.x2, y2: selectedRect.y2 };
-    addLocalDrawEvent && addLocalDrawEvent(payload);
-    // Only broadcast non-text operations
+      : { type: 'erase-rect', x1: selectedRect.x1, y1: selectedRect.y1, x2: selectedRect.x2, y2: selectedRect.y2, lineWidth: 1 };
+    
+    // Add to current page's events
+    recordLocalEvent(payload);
+    
+    // Broadcast non-text operations to other users
     if ((payload?.type || '') !== 'text-delete') {
       sendDrawEvent(payload);
     }
