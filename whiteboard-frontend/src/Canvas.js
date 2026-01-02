@@ -62,6 +62,28 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
   const currentPageRef = useRef(currentPage);
   currentPageRef.current = currentPage;
 
+  // Sync incoming drawEvents prop (from backend/WebSocket) to the current page's events
+  // This ensures real-time collaboration works - when another user draws, we see it
+  useEffect(() => {
+    const incomingEvents = Array.isArray(drawEvents) ? drawEvents : [];
+    
+    // Always sync drawEvents to the current page for real-time updates
+    if (incomingEvents.length > 0) {
+      setPages(prev => prev.map(page => {
+        if (page.id !== currentPageRef.current) return page;
+        // Replace page events with incoming events (drawEvents is the source of truth)
+        return { ...page, events: incomingEvents };
+      }));
+    } else {
+      // If drawEvents is empty (e.g., after clear), also clear page events
+      setPages(prev => prev.map(page => {
+        if (page.id !== currentPageRef.current) return page;
+        if (page.events.length === 0) return page;
+        return { ...page, events: [] };
+      }));
+    }
+  }, [drawEvents]);
+
   // Get current page's events for rendering
   const getCurrentPageEvents = () => {
     const page = pages.find(p => p.id === currentPage);
@@ -509,11 +531,12 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
 
   const recordLocalEvent = (evt) => {
     if (!evt) return;
-    // Always add to current page's events
-    addEventToCurrentPage(evt);
-    // Also send to external buffer if available (for WebSocket sync)
+    // Add to external buffer (for WebSocket sync) - this will sync back to pages via useEffect
     if (hasExternalLocalBuffer) {
       addLocalDrawEvent(evt);
+    } else {
+      // Fallback: add directly to page if no external buffer
+      addEventToCurrentPage(evt);
     }
   };
 
