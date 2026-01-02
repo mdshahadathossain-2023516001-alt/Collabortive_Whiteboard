@@ -148,6 +148,35 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
     }
   };
 
+  const deletePage = () => {
+    // Don't allow deleting if only one page exists
+    if (pages.length <= 1) {
+      toast.error('Cannot delete the last page');
+      return;
+    }
+
+    const pageToDelete = currentPage;
+    console.log('Deleting page:', pageToDelete, 'total pages:', pages.length);
+
+    // Remove the current page and reindex remaining pages
+    setPages(prev => {
+      const newPages = prev.filter(p => p.id !== pageToDelete);
+      // Reindex page IDs to be sequential
+      return newPages.map((page, index) => ({ ...page, id: index + 1 }));
+    });
+
+    // Navigate to previous page if we're on the last page, otherwise stay on same page number
+    const newCurrentPage = pageToDelete > pages.length - 1 ? pages.length - 1 : pageToDelete;
+    setCurrentPage(Math.max(1, newCurrentPage > pages.length - 1 ? pages.length - 1 : newCurrentPage));
+
+    // Force canvas redraw
+    setTimeout(() => {
+      setCanvasEpoch(v => v + 1);
+    }, 50);
+
+    toast.success(`Page ${pageToDelete} deleted`);
+  };
+
   const handleTextSubmit = () => {
     if (!textPosition) return;
     const value = (textInput || '').toString();
@@ -1714,6 +1743,14 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
             className="add-page-btn"
           >
             <FaPlus /> Add Page
+          </button>
+          <button 
+            onClick={deletePage} 
+            disabled={pages.length <= 1}
+            title="Delete Current Page"
+            className="delete-page-btn"
+          >
+            <FaTrash /> Delete Page
           </button>
         </div>
       </div>

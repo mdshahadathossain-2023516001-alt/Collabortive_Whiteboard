@@ -175,6 +175,21 @@
   cursor: not-allowed;
 }
 
+.delete-page-btn {
+  background-color: #ef4444 !important;
+  color: white !important;
+  border-color: #ef4444 !important;
+}
+
+.delete-page-btn:hover:not(:disabled) {
+  background-color: #dc2626 !important;
+}
+
+.delete-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .canvas-toolbar .tool-group button {
   min-width: 40px;
 }
