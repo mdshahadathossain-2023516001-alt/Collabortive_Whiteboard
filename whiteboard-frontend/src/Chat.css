@@ -536,6 +536,9 @@
   border-radius: 10px;
   box-shadow: var(--chat-shadow);
   z-index: 10;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .chat-emoji {
