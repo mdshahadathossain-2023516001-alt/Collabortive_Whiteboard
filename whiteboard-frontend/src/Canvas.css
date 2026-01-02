@@ -120,6 +120,13 @@
   background-color: #0066cc !important;
 }
 
+/* Export buttons group */
+.export-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 /* Page Controls */
 .page-controls {
   display: flex;

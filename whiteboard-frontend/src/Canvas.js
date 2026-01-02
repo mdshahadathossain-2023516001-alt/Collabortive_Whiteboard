@@ -1427,7 +1427,7 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
       else if (tool === 'rect') drawRectShape(ctx, payload);
       else if (tool === 'circle') drawCircleShape(ctx, payload);
       // Add locally so it persists even if server echo is delayed
-      addLocalDrawEvent && addLocalDrawEvent(payload);
+      recordLocalEvent(payload);
       sendDrawEvent(payload);
     }
     shapeStartRef.current = null;
@@ -1699,21 +1699,23 @@ function Canvas({ drawEvents, sendDrawEvent, previewShape, addLocalDrawEvent, us
           <FaTrash /> Clear
         </button>
 
-        <button 
-          onClick={handleExportPNG} 
-          className="export-png-btn"
-          title="Export as PNG"
-        >
-          <FaFileDownload /> PNG
-        </button>
+        <div className="export-buttons">
+          <button 
+            onClick={handleExportPNG} 
+            className="export-png-btn"
+            title="Export as PNG"
+          >
+            <FaFileDownload /> PNG
+          </button>
 
-        <button 
-          onClick={handleExportPDF} 
-          className="export-pdf-btn"
-          title="Export as PDF"
-        >
-          <FaFileDownload /> PDF
-        </button>
+          <button 
+            onClick={handleExportPDF} 
+            className="export-pdf-btn"
+            title="Export as PDF"
+          >
+            <FaFileDownload /> PDF
+          </button>
+        </div>
 
         {/* Page Management Controls */}
         <div className="page-controls">

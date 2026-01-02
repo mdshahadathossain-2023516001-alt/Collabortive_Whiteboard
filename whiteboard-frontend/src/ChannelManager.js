@@ -228,7 +228,10 @@ function ChannelManager({
 
                   <div className="modal-body">
                     <div className="server-setup-section">
-                      <label htmlFor="server-image-upload" className="server-upload-circle">
+                      <label 
+                        htmlFor="server-image-upload" 
+                        className={`server-upload-circle ${uploadedImage ? 'has-image' : ''}`}
+                      >
                         <input
                           id="server-image-upload"
                           type="file"
@@ -238,19 +241,8 @@ function ChannelManager({
                         />
                         {uploadedImage ? (
                           <img src={uploadedImage} alt="Server" className="uploaded-server-image" />
-                        ) : (
-                          <div className="upload-icon">📷</div>
-                        )}
-                        <button 
-                          type="button"
-                          className="upload-plus"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            document.getElementById('server-image-upload').click();
-                          }}
-                        >
-                          +
-                        </button>
+                        ) : null}
+                        <span className="upload-plus-icon">+</span>
                       </label>
                       <p className="upload-label">UPLOAD</p>
                       

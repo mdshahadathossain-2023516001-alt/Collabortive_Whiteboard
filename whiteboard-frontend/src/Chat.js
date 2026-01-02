@@ -246,6 +246,7 @@ function Chat({ chatMessages, sendChatMessage, userName, channelName, isMinimize
             <input
               ref={fileInputRef}
               type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.*"
               style={{ display: 'none' }}
               onChange={(e) => uploadAndSend(e.target.files?.[0])}
             />

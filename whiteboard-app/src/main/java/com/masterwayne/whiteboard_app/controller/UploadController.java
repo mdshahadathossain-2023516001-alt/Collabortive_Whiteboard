@@ -20,7 +20,7 @@ import java.util.UUID;
 @RequestMapping("/api/uploads")
 public class UploadController {
 
-    private static final long MAX_UPLOAD_BYTES = 10L * 1024L * 1024L; // 10MB
+    private static final long MAX_UPLOAD_BYTES = 50L * 1024L * 1024L; // 50MB
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UploadResponse> upload(@RequestParam("file") MultipartFile file) throws IOException {
